@@ -1,11 +1,17 @@
 import shutil
 import os
 import numpy as np
+import platform
 from pathlib import Path
 import json
 import ctypes
 
-similarity_lib = ctypes.CDLL("lib/category_grouper_lib.so")
+if platform.system() == "Windows":
+    lib_path = Path("lib/category_grouper_lib.dll")
+else:
+    lib_path = Path("lib/category_grouper_lib.so")
+
+similarity_lib = ctypes.CDLL(str(lib_path))
 similarity_lib.calculate_similarity.restype = ctypes.c_float
 
 similarity_lib.calculate_similarity.argtypes = [
@@ -20,7 +26,7 @@ similarity = 0.8 # Aumentar para diminurir variação de imagens iniciais para c
 leader_similarity = 0.44 # Aumentar para diminuir variação com imagem original da categoria
 categories_similarity = 0.75 #A Aumentar para evitar junção de categorias diferentes
 
-VECTOR_DATA_DIR = "data/images_vectors.json"
+VECTOR_DATA_DIR = Path("data/images_vectors.json")
 
 categories = []
 

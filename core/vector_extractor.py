@@ -8,8 +8,8 @@ from pathlib import Path
 
 lot_value = 500
 
-MODEL_DIR = "./models/mobilenet_v2_embeddings.onnx"
-VECTOR_DATA_DIR = "data/images_vectors.json"
+MODEL_DIR = Path("./models/mobilenet_v2_embeddings.onnx")
+VECTOR_DATA_DIR = Path("data/images_vectors.json")
 
 def start_model():
     if not os.path.exists(MODEL_DIR):

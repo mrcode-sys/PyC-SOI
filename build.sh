@@ -13,7 +13,7 @@ mkdir -p lib data core src_c
 
 echo -e "Compiling the math engine (${BLUE}src_c/category_grouper.c${NO_COLOR})..."
 
-gcc -shared -o lib/category_grouper_lib.so -fPIC src_c/agrupador.c -lm -O3 -march=native
+gcc -shared -o lib/category_grouper_lib.so -fPIC src_c/category_grouper.c -lm -O3 -march=native
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}[Success] The lib/category_grouper_lib.so library is generated${NO_COLOR}"

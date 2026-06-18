@@ -42,7 +42,7 @@ def main():
     print(f"Target directory: {OUTPUT_FILES}\n")
 
     create_vector(FILES_DIR)
-    obj_list = separate_categories()
+    obj_list = separate_categories(OUTPUT_FILES)
 
     for obj in obj_list:
         if should_move:

@@ -5,6 +5,7 @@ import platform
 from pathlib import Path
 import json
 import ctypes
+from core.vector_extractor import start_model, obtain_vectors
 
 if platform.system() == "Windows":
     lib_path = Path("lib/category_grouper_lib.dll")
@@ -19,7 +20,6 @@ similarity_lib.calculate_similarity.argtypes = [
   ctypes.POINTER(ctypes.c_float),
   ctypes.c_int
 ]
-
 
 similarity = 0.8 # Aumentar para diminurir variação de imagens iniciais para categoria
 #images_similarity = 0.78 Not used
@@ -52,27 +52,16 @@ class Category:
 
     self.mean_vector = np.mean(self.vectors, axis=0)
 
-def open_vectors():
 
-  if not Path(VECTOR_DATA_DIR).is_file():
+def open_json(data_file):
+  if not Path(data_file).is_file():
     return {}
+  with open(data_file, 'r', encoding='utf-8') as file:
+    return json.load(file)
 
-  with open(VECTOR_DATA_DIR, 'r', encoding='utf-8') as file:
-    data = json.load(file)
-
-    while isinstance(data, str):
-      data = json.loads(data)
-
-    for key in data:
-        data[key] = np.array(data[key], dtype=np.float32)
-    return data
-
-def calculate_similarity_old1(vector1, vector2):
-    dot_product = np.dot(vector1, vector2)
-    norm_v1 = np.linalg.norm(vector1)
-    norm_v2 = np.linalg.norm(vector2)
-
-    return dot_product / (norm_v1 * norm_v2)
+def save_json(data, data_file):
+  with open(data_file, "w", encoding="utf-8") as file:
+    json.dump(data, file, indent=4, ensure_ascii=False)
 
 def c_calculate_similarity(vector1, vector2):
   c_vector1 = vector1.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
@@ -89,16 +78,35 @@ def add_category(image, vector, category):
   category.add_image(image, vector)
   categories.append(category)
 
-logs = {}
+def load_organized_categories(categories_dir, vectors):
+  loaded_categories = []
+  session = start_model()
+  categories_dir = Path(categories_dir)
 
-def search_similarity_old1(vector):
+  if not categories_dir.is_dir():
+    return loaded_categories
+  
+  for folder_path in categories_dir.iterdir():
 
-  for category in categories:
-    print(f"DEBUG: {category.images}")
-    print(c_calculate_similarity(category.mean_vector, vector))
-    if c_calculate_similarity(category.mean_vector, vector) >= similarity:
-      return category  
-  return False
+    if folder_path.is_dir():
+      folder_name = folder_path.name
+      category_obj = Category(folder_name)
+
+      for file_path in folder_path.iterdir():
+        if file_path.is_file() and file_path.suffix.lower() in ['.jpg', '.jpeg', '.png', '.webp', '.bmp']:
+          image_name = file_path.name
+          image_vector = vectors.get(image_name)
+
+          if image_vector is None:
+            print(f"Image '{image_name}' not found in vectors cache. Extracting now...")
+            if session:
+              image_vector = obtain_vectors(session, file_path)
+          if not image_vector is None:
+            category_obj.add_image(image_name, image_vector)
+
+      loaded_categories.append(category_obj)
+  save_json(vectors, VECTOR_DATA_DIR)
+  return loaded_categories
 
 def search_similarity(vector):
 
@@ -110,22 +118,21 @@ def search_similarity(vector):
         return category  
   return False
 
-def search_similarity_old(vector): #old function
+def separate_categories(categories_path):
+  vectors = open_json(VECTOR_DATA_DIR)
 
+  global categories
+  categories = load_organized_categories(categories_path, vectors)
+
+  already_organized = set()
+  
   for category in categories:
-    #print(f"DEBUG: {category.images}")
-    #print(c_calculate_similarity(category.leader_vector, vector))
-    if c_calculate_similarity(category.leader_vector, vector) >= leader_similarity:
-      for category_vector in category.vectors:
-        #print(c_calculate_similarity(category_vector, vector))
-        if c_calculate_similarity(category_vector, vector) >= images_similarity:
-          return category  
-  return False
-
-def separate_categories():
-  vectors = open_vectors()
+    already_organized.update(category.images)
 
   for i, v in vectors.items():
+    if i in already_organized:
+      continue
+
     obj = search_similarity(v)
     if obj:
       obj.add_image(i, v)
@@ -191,4 +198,5 @@ def separate_categories():
   return categories
 
 if __name__ == "__main__":
-  separate_categories()
+  test_path = Path("../organized")
+  separate_categories(test_path)

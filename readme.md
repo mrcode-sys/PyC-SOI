@@ -1,19 +1,13 @@
 # 🖼️ PyC-SOI (Similar Object Identifier)
 
-It is a high-performance, intelligent media organizer and classifier designed specifically to process massive image collections ultra-fast. It was built to bypass the hardware bottlenecks common in lightweight, low-spec processors (such as the Intel Celeron line).
+It is a high-performance, intelligent media organizer and classifier designed specifically to process massive image collections ultra-fast.s (such as the Intel  It was built to bypass the hardware bottlenecks common in lightweight, low-spec processor Celeron line).
 
-The project leverages a **hybrid architecture**: it utilizes the flexibility and rich ecosystem of **Python** for high-level data management and I/O operations, while delegating heavy mathematical loops to a native, raw **C library** via `ctypes`.
-
----
-
-## 🧠 How the Pipeline Works
+## 🧠 How Works
 
 To extract maximum speed from the CPU and optimize RAM usage, the organization lifecycle is split into independent modules:
 
-1. **Embedding Extraction (Python + ONNX):** Images are analyzed using a MobileNetV2 model running on the ONNX Runtime. Each image is translated into a 1280-dimensional vector, acting as a "conceptual coordinate" of the image's abstract visual features. These vectors are cached into local JSON files in batches (e.g., 500 images) to preserve disk write-lifespan.
-2. **Optimized Clustering (Python + Native C):** The system performs a Two-Stage Clustering algorithm with category merging based on vector averages (Centroids). The cross-comparison loops (`while`) and repetitive Cosine Similarity calculations are processed at bare-metal speed by the compiled C library, slashing identification time from minutes to seconds.
-3. **Interactive User Feedback (Lazy Learning):** The system learns from human organization. If you manually move files or rename folders directly via your operating system's file manager, **PyC-SOI** reads the new folder structure upon its next boot and instantly updates its mathematical map, removing the need for heavy neural network retraining.
-
+1. **Embedding Extraction (Python + ONNX):** Images are analyzed using a MobileNetV2 model running on the ONNX Runtime. Each image is translated into a 1280-dimensional vector, acting as a "conceptual coordinate" of the image's abstract visual features. These vectors are cached into local JSON files.
+2. **Optimized Clustering (Python + C):** The system performs a Two-Stage Clustering algorithm with category merging based on vector averages (Centroids). The cross-comparison loops (`while`) and repetitive Cosine Similarity calculations are processed at pure hardware speed by the compiled C library.
 ---
 
 ## 📁 Directory Structure
@@ -43,7 +37,7 @@ PyC-SOI/
 
 2. **Automated Environment Setup**
 
-    The project includes a standalone automation script (build.ps1) that verifies directory structure, compiles the native C module into a .dll with aggressive hardware optimization flags (-O3 -march=native), and installs all Python dependencies automatically.
+    The project includes a standalone automation script (build.ps1) that verifies directory structure, compiles the native C module into a .dll file and installs all Python dependencies automatically.
 
     Simply open your terminal in the project root directory and run:
     ```powershell
@@ -67,7 +61,7 @@ PyC-SOI/
 
 2. **Automated Environment Setup**
 
-    The project includes a standalone automation script (build.sh) that verifies directory structure, compiles the native C module with aggressive hardware optimization flags (-O3 -march=native), and installs all Python dependencies automatically.
+    The project includes a standalone automation script (build.sh) that verifies directory structure, compiles the native C module into a .so file and installs all Python dependencies automatically.
 
     Simply open your terminal in the project root directory and run:
     ```Bash
@@ -88,7 +82,7 @@ PyC-SOI/
 
     [x] Persistent vector caching with batch-saving strategies.
 
-    [] Automatic cache synchronization and cleanup of orphaned image vectors.
+    [ ] Automatic cache synchronization and cleanup of orphaned image vectors.
 
     [ ] Implementation of a multi-criteria scoring system (Weighted Ensemble).
 

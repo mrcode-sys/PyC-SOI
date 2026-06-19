@@ -82,7 +82,7 @@ PyC-SOI/
 
     [x] Persistent vector caching with batch-saving strategies.
 
-    [ ] Automatic cache synchronization and cleanup of orphaned image vectors.
+    [x] Automatic cache synchronization.
 
     [ ] Implementation of a multi-criteria scoring system (Weighted Ensemble).
 

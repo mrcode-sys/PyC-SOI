@@ -14,10 +14,21 @@ else:
 
 similarity_lib = ctypes.CDLL(str(lib_path))
 similarity_lib.calculate_similarity.restype = ctypes.c_float
+similarity_lib.find_best_category.restype = ctypes.c_int
 
 similarity_lib.calculate_similarity.argtypes = [
   ctypes.POINTER(ctypes.c_float),
   ctypes.POINTER(ctypes.c_float),
+  ctypes.c_int
+]
+
+similarity_lib.find_best_category.argtypes = [
+  ctypes.POINTER(ctypes.c_float),
+  ctypes.POINTER(ctypes.c_float),
+  ctypes.POINTER(ctypes.c_float),
+  ctypes.c_float,
+  ctypes.c_float,
+  ctypes.c_int,
   ctypes.c_int
 ]
 
@@ -118,6 +129,28 @@ def search_similarity(vector):
         return category  
   return False
 
+def c_search_similarity(vector):
+  if not categories:
+    return -1
+
+  np_leaders = np.array([cat.leader_vector for cat in categories], dtype=np.float32)
+  np_centroids = np.array([cat.mean_vector for cat in categories], dtype=np.float32)
+
+  c_vector = vector.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+  c_leaders = np_leaders.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+  c_centroids = np_centroids.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+
+  index = similarity_lib.find_best_category(
+    c_vector,
+    c_centroids,
+    c_leaders,
+    float(leader_similarity),
+    float(similarity),
+    len(vector),
+    len(categories)
+  )
+  return index
+
 def separate_categories(categories_path):
   vectors = open_json(VECTOR_DATA_DIR)
 
@@ -132,15 +165,16 @@ def separate_categories(categories_path):
   for i, v in vectors.items():
     if i in already_organized:
       continue
+    idx = c_search_similarity(np.array(v, dtype=np.float32))
 
-    obj = search_similarity(v)
-    if obj:
+    if idx != -1:
+      obj = categories[idx]
       obj.add_image(i, v)
       print(f"{i} added on {obj.category}")
     else:
       category_name = f"Category_{len(categories)}"
       add_category(i, v, category_name)
-      print(f"{category_name} added for {i}")
+      print(f"{category_name} created for {i}")
 
   i = 0
   while i < len(categories):

@@ -23,3 +23,25 @@ float calculate_similarity(float *v1, float *v2, int n){
   if (v1_norm == 0.0f || v2_norm == 0.0f) return 0.0f;
   return dot_product / (v1_norm * v2_norm);
 }
+
+int find_best_category(float *v, float *c, float *l, float mlv, float mcv, int nv, int ncl){
+  float best_value = mcv;
+  int image_index = -1;
+
+  for(int i = 0; i < ncl; i++){
+    float *current_leader = &l[i * nv];
+    float *current_centroid = &c[i * nv];
+
+
+    float leader_value = calculate_similarity(v, current_leader, nv);
+    if(leader_value > mlv){
+      float mean_value = calculate_similarity(v, current_centroid, nv);
+      if(mean_value > best_value){
+        best_value = mean_value;
+        image_index = i;
+
+      }
+    }
+  }
+  return image_index;
+}

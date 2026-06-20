@@ -13,9 +13,9 @@ VECTOR_DATA_DIR = Path("data/images_vectors.json")
 
 def start_model():
     if not os.path.exists(MODEL_DIR):
-        print(f"Erro: O arquivo do modelo não foi encontrado em '{MODEL_DIR}'")
+        print(f"[Error] Model not found. Model dir: '{MODEL_DIR}'")
         return None
-    print("Carregando modelo ONNX na memória...")
+    print("Loading model...")
     session = onnxruntime.InferenceSession(MODEL_DIR, providers=['CPUExecutionProvider'])
     return session
     
@@ -30,7 +30,7 @@ def configure_image(img_dir):
         img_data = numpy.expand_dims(img_data, axis=0)
         return img_data
     except Exception as e:
-        print(f"Erro ao preparar imagem {img_dir}: {e}")
+        print(f"[Error] Configure image error. Image:{img_dir}. Error: {e}")
         return None
 
 def obtain_vectors(session, image_dir):
@@ -56,7 +56,6 @@ def save_json(data, data_file):
 
 def create_vector(files_dir):
   session = start_model()
-  print(session)
   if not session:
     return
   
@@ -65,13 +64,12 @@ def create_vector(files_dir):
 
 
   if not files:
-      print("Nenhuma imagem na pasta para o ONNX analisar.")
+      print("No images in folder")
       return
 
   vectors = open_json(VECTOR_DATA_DIR)
   
   loop_count = 0
-  print(files_dir)
   for file in files:
 
     if not file in vectors:
@@ -85,7 +83,7 @@ def create_vector(files_dir):
           save_json(vectors, VECTOR_DATA_DIR)
 
   if loop_count > 0:
-    print("Atualizando arquivo images_vectors.json...")
+    print("Updating vectors file...")
     save_json(vectors, VECTOR_DATA_DIR)
 
 if __name__ == "__main__":

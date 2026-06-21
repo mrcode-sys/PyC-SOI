@@ -119,16 +119,6 @@ def load_organized_categories(categories_dir, vectors):
   save_json(vectors, VECTOR_DATA_DIR)
   return loaded_categories
 
-def search_similarity(vector):
-
-  for category in categories:
-    #print(f"DEBUG: {category.images}")
-    #print(c_calculate_similarity(category.mean_vector, vector))
-    if c_calculate_similarity(category.leader_vector, vector) >= leader_similarity:
-      if c_calculate_similarity(category.mean_vector, vector) >= similarity:
-        return category  
-  return False
-
 def c_search_similarity(vector):
   if not categories:
     return -1

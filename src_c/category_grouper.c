@@ -61,6 +61,7 @@ void find_categories_to_merge(float *c, float mcv, int nv, int nc, int *merge_ma
     int j = i + 1; // Para segundo loop nunca ser a mesma ou categorias que já passaram
 
     while(j < nc) {
+
       if (merge_map[j] != j) continue; // Ignora categorias já modificadas para serem fundidas
 
       float *category2_mean = &c[j * nv]; // passa o ponteiro da categoria 2
@@ -70,6 +71,7 @@ void find_categories_to_merge(float *c, float mcv, int nv, int nc, int *merge_ma
         best_value = similarity; // define como melhor similaridade
         target_j = j; // salva dentro do primeiro loop
       }
+      j++;
     }
 
     if (target_j != -1) {

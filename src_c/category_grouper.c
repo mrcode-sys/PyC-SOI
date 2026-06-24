@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 
 float dot(float *v1,float *v2, int n){
   float product = 0.0f;
@@ -46,7 +47,7 @@ int find_best_category(float *v, float *c, float *l, float mlv, float mcv, int n
   return image_index;
 }
 
-void find_categories_to_merge(float *c, float mcv, int nv, int nc, int *merge_map) {
+void find_categories_to_merge(float *c, float mcv, int nv, int nc, int *merge_map, int old_categories_count) {
   
   for(int i = 0; i < nc; i++) {
     merge_map[i] = i; // Define o index de acordo com as categorias
@@ -56,26 +57,18 @@ void find_categories_to_merge(float *c, float mcv, int nv, int nc, int *merge_ma
     if (merge_map[i] != i) continue; // Ignora categorias já modificadas para serem fundidas
 
     float *category1_mean = &c[i * nv]; // passa o ponteiro da categoria 1
-    float best_value = mcv;
-    int target_j = -1;
-    int j = i + 1; // Para segundo loop nunca ser a mesma ou categorias que já passaram
+    int start_j = (i < old_categories_count) ? old_categories_count : (i + 1);
 
-    while(j < nc) {
-
+    for(int j = start_j; j < nc; j++) {
       if (merge_map[j] != j) continue; // Ignora categorias já modificadas para serem fundidas
 
-      float *category2_mean = &c[j * nv]; // passa o ponteiro da categoria 2
+      float *category2_mean = &c[j * nv]; // passa o ponteiro da categoria 1
       float similarity = calculate_similarity(category1_mean, category2_mean, nv); // Calcula a similaridade
       
-      if (similarity >= best_value) { // Se a similaridade for a melhor e acima do valor definido
-        best_value = similarity; // define como melhor similaridade
-        target_j = j; // salva dentro do primeiro loop
+      if (similarity >= mcv) { // Verifica se similaridade é maior que o menor valor para fundir
+         merge_map[j] = i; // Salva no mapa de fundições, index usado para acessar categoria original, valor do index é o index a ser fundido
+         printf("Category %d merged into %d (Sim: %.2f)\n", j, i, similarity);
       }
-      j++;
-    }
-
-    if (target_j != -1) {
-      merge_map[target_j] = i; // Salva no mapa de fundições, index usado para acessar categoria original, valor do index é o index a ser fundido
     }
   }
 }

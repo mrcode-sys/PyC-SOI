@@ -39,7 +39,8 @@ similarity_lib.find_categories_to_merge.argtypes = [
     ctypes.c_float,
     ctypes.c_int,
     ctypes.c_int,
-    ctypes.POINTER(ctypes.c_int)
+    ctypes.POINTER(ctypes.c_int),
+    ctypes.c_int
 ]
 
 similarity = 0.8 # Aumentar para diminurir variação de imagens iniciais para categoria
@@ -161,17 +162,14 @@ def c_search_similarity(vector):
   )
   return index
 
-def c_merge_categories():
+def c_merge_categories(old_categories_count):
   global categories
   if len(categories) < 1:
     return
-  # 1. Cria a matriz de centróides para o C
   np_centroids = np.array([cat.mean_vector for cat in categories], dtype=np.float32)
   
-  # 2. Cria o array onde o C vai descarregar os resultados (mesmo tamanho das categorias)
   merge_map = np.zeros(len(categories), dtype=np.int32)
 
-  # 3. Extrai os ponteiros e chama o C
   c_centroids = np_centroids.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
   c_merge_map = merge_map.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
 
@@ -180,10 +178,10 @@ def c_merge_categories():
       float(categories_similarity), 
       len(categories[0].mean_vector), 
       len(categories), 
-      c_merge_map
+      c_merge_map,
+      old_categories_count
   )
 
-  # 4. A mágica acontece aqui no Python: Executa as fusões baseadas no mapa do C
   categories_to_remove = set()
   
   for idx_child, idx_parent in enumerate(merge_map):
@@ -193,13 +191,11 @@ def c_merge_categories():
           
           print(f"merge: {child_cat.category} > {parent_cat.category}")
           
-          # Move todas as imagens e vetores da categoria filha para a pai
           for img, vec in zip(child_cat.images, child_cat.vectors):
               parent_cat.add_image(img, vec)
               
           categories_to_remove.add(child_cat)
 
-  # 5. Remove as categorias que foram engolidas da lista global
   categories = [cat for cat in categories if cat not in categories_to_remove]
 
 def separate_categories(categories_path):
@@ -208,11 +204,14 @@ def separate_categories(categories_path):
   global categories
   categories = load_organized_categories(categories_path, vectors)
 
+  old_categories_count = len(categories)
+
   already_organized = set()
   
   for category in categories:
     already_organized.update(category.images)
 
+  # Cria as categorias
   for i, v in vectors.items():
     if i in already_organized:
       continue
@@ -227,7 +226,7 @@ def separate_categories(categories_path):
       add_category(i, v, category_name)
       print(f"{category_name} created for {i}")
 
-  c_merge_categories()
+  c_merge_categories(old_categories_count)
 
 
   print("Cleaning unidentified categories")

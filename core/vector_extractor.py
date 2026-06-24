@@ -73,7 +73,6 @@ def create_vector(files_dir):
   loop_count = 0
   print(files_dir)
   for file in files:
-
     if not file in vectors:
       file_path = os.path.join(files_dir, file)
       file_vector = obtain_vectors(session, file_path)

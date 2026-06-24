@@ -13,8 +13,10 @@ else:
     lib_path = Path("lib/category_grouper_lib.so")
 
 similarity_lib = ctypes.CDLL(str(lib_path))
+
 similarity_lib.calculate_similarity.restype = ctypes.c_float
 similarity_lib.find_best_category.restype = ctypes.c_int
+similarity_lib.find_categories_to_merge.restype = None
 
 similarity_lib.calculate_similarity.argtypes = [
   ctypes.POINTER(ctypes.c_float),
@@ -30,6 +32,14 @@ similarity_lib.find_best_category.argtypes = [
   ctypes.c_float,
   ctypes.c_int,
   ctypes.c_int
+]
+
+similarity_lib.find_categories_to_merge.argtypes = [
+    ctypes.POINTER(ctypes.c_float),
+    ctypes.c_float,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.POINTER(ctypes.c_int)
 ]
 
 similarity = 0.8 # Aumentar para diminurir variação de imagens iniciais para categoria
@@ -151,6 +161,47 @@ def c_search_similarity(vector):
   )
   return index
 
+def c_merge_categories():
+  global categories
+  if len(categories) < 1:
+    return
+  # 1. Cria a matriz de centróides para o C
+  np_centroids = np.array([cat.mean_vector for cat in categories], dtype=np.float32)
+  
+  # 2. Cria o array onde o C vai descarregar os resultados (mesmo tamanho das categorias)
+  merge_map = np.zeros(len(categories), dtype=np.int32)
+
+  # 3. Extrai os ponteiros e chama o C
+  c_centroids = np_centroids.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+  c_merge_map = merge_map.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
+
+  similarity_lib.find_categories_to_merge(
+      c_centroids, 
+      float(categories_similarity), 
+      len(categories[0].mean_vector), 
+      len(categories), 
+      c_merge_map
+  )
+
+  # 4. A mágica acontece aqui no Python: Executa as fusões baseadas no mapa do C
+  categories_to_remove = set()
+  
+  for idx_child, idx_parent in enumerate(merge_map):
+      if idx_child != idx_parent:
+          parent_cat = categories[idx_parent]
+          child_cat = categories[idx_child]
+          
+          print(f"merge: {child_cat.category} > {parent_cat.category}")
+          
+          # Move todas as imagens e vetores da categoria filha para a pai
+          for img, vec in zip(child_cat.images, child_cat.vectors):
+              parent_cat.add_image(img, vec)
+              
+          categories_to_remove.add(child_cat)
+
+  # 5. Remove as categorias que foram engolidas da lista global
+  categories = [cat for cat in categories if cat not in categories_to_remove]
+
 def separate_categories(categories_path):
   vectors = open_json(VECTOR_DATA_DIR)
 
@@ -176,41 +227,7 @@ def separate_categories(categories_path):
       add_category(i, v, category_name)
       print(f"{category_name} created for {i}")
 
-  i = 0
-  while i < len(categories):
-    category1 = categories[i]
-    category1_mean = category1.mean_vector
-
-    j = i + 1
-
-    best_similarity = categories_similarity
-    category_to_merge = None
-
-    while j < len(categories):
-      category2 = categories[j]
-      category2_mean = category2.mean_vector
-
-      categories_mean_similarity = c_calculate_similarity(category1_mean, category2_mean)
-
-      #print(f"DEBUG\n{category1.category}\n{category2.category}\n{categories_mean_similarity}")
-
-      if categories_mean_similarity >= best_similarity:
-        best_similarity = categories_mean_similarity
-        category_to_merge = category2
-      
-      j += 1
-
-    if category_to_merge is not None:
-      print(f"merge: {category_to_merge.category} > {category1.category} (Highest similarity: {best_similarity:.2f})")
-
-      for img, vec in zip(category_to_merge.images, category_to_merge.vectors):
-        category1.add_image(img, vec)
-
-
-      category1_mean = category1.mean_vector
-      categories.remove(category_to_merge)
-    else:
-      i += 1
+  c_merge_categories()
 
 
   print("Cleaning unidentified categories")

@@ -5,7 +5,6 @@ New-Item -ItemType Directory -Force -Path lib, data, core, src_c | Out-Null
 
 Write-Host "Compiling the math engine (src_c/category_grouper.c)..." -ForegroundColor Blue
 
-# Compila como .dll no Windows
 gcc -shared -o lib/category_grouper_lib.dll -fPIC src_c/category_grouper.c -lm -O3 -march=native
 
 if ($LastExitCode -eq 0) {
@@ -15,9 +14,11 @@ if ($LastExitCode -eq 0) {
     python -m venv venv
 
     Write-Host "Activating virtual environment and installing python libraries..." -ForegroundColor Blue
-    # No Windows PowerShell, a ativação é feita chamando o script Activate.ps1
-    & .\venv\Scripts\Activate.ps1
-    
+    if (Test-Path ".\venv\Scripts\Activate.ps1") {
+        & .\venv\Scripts\Activate.ps1
+    } else {
+        & .\venv\bin\Activate.ps1
+    }
     pip install -r requirements.txt
     
     if ($LastExitCode -eq 0) {

@@ -21,7 +21,7 @@ PyC-SOI/
 │   └── folder_manager.py         # File validation and management
 │
 ├── src_c/                        # Math engine in pure C
-│   └── agrupador.c               # Dot product, linalg norm, and cosine similarity
+│   └── category_grouper.c               # Dot product, linalg norm, and cosine similarity
 │
 ├── lib/                          # Target folder for the compiled dynamic library (.so)
 └── data/                         # Local caches and vector persistence in JSON
@@ -39,7 +39,12 @@ PyC-SOI/
 
     The project includes a standalone automation script (build.ps1) that verifies directory structure, compiles the native C module into a .dll file and installs all Python dependencies automatically.
 
-    Simply open your terminal in the project root directory and run:
+    If this is your first time running scripts in PowerShell, run this to allow execution:
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser
+    ```
+
+    And open your terminal in the project root directory and run:
     ```powershell
     .\build.ps1
     ```
